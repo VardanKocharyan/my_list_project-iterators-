@@ -1,17 +1,19 @@
-#pragma once 
-#include <cstddef>
+#pragma once
 #include <iostream>
+#include <cstddef>
+
+#include "conditional.hpp"
+#include "enable_if.hpp"
 
 template<typename T>
 class my_list {
     public:
         using value_type = T;
-        using pointer = T*;
         using size_type = size_t;
-        using reference = value_type&;
-        using const_reference = const value_type&;
-        using differance_type = ptrdiff_t;
-        using iterator_category = std::bidirectional_iterator_tag;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using reference = T&;
+        using const_reference = const T&;
 
     private: //Node
         struct NodeBase {
@@ -23,32 +25,60 @@ class my_list {
 
             Node(const_reference v = value_type()) : value(v) {}
         };
+
         NodeBase* sentinel;
         size_type msize;
 
-    public: //iterator
-        struct iterator {
+        //iterator
+        template <bool isConst>
+        class list_iterator {
+            public:
+                using differance_type = ptrdiff_t;
+                using iterator_category = std::bidirectional_iterator_tag;
+
+                using reference = conditional_t<
+                    isConst,
+                    const_reference,
+                    reference
+                >;
+
+                using pointer = conditional_t<
+                    isConst,
+                    const_pointer,
+                    pointer
+                >;
+
             private:
                 NodeBase* curr;
+                using NodePtr = NodeBase*;
+
             public:
-                iterator(NodeBase* r = nullptr) : curr(r) {}
-                iterator(const iterator& r) : curr(r.curr) {}
+                list_iterator(NodePtr r = nullptr) : curr(r) {}
 
-                iterator& operator=(const iterator& r) { curr = r.curr; return *this; }
+                template <bool B = isConst, typename = enable_if_t<B>>
+                list_iterator(const list_iterator<false>& r) : curr(r.curr) {}
 
-                iterator& operator++() { curr = curr->next; return *this; }
-                iterator operator++(int) { iterator tmp = *this; curr = curr->next; return tmp; }
-                iterator& operator--() { curr = curr->prev; return *this; }
-                iterator operator--(int) { iterator tmp = *this; curr = curr->prev; return tmp; }
-                
+                list_iterator& operator=(const list_iterator& r) {
+                    if (this != &r)
+                        curr = r.curr;
+                    return *this;
+                }
+
+                list_iterator& operator++() { curr = curr->next; return *this; }
+                list_iterator operator++(int) { auto tmp = *this; curr = curr->next; return tmp; }
+                list_iterator& operator--() { curr = curr->prev; return *this; }
+                list_iterator operator--(int) { auto tmp = *this; curr = curr->prev; return tmp; }
                 reference operator*() const { return static_cast<Node*>(curr)->value; }
                 pointer operator->() const { return &(static_cast<Node*>(curr)->value); }
 
-                bool operator==(const iterator& r) const { return curr == r.curr; }
-                bool operator!=(const iterator& r) const { return curr != r.curr; }
+                bool operator==(const list_iterator& r) const { return curr == r.curr; }
+                bool operator!=(const list_iterator& r) const { return curr != r.curr; }
         };
 
     public:
+        using iterator = list_iterator<false>;
+        using const_iterator = list_iterator<true>;
+
         //ctors
         my_list();
         my_list(size_type count, const_reference val = T());
@@ -65,7 +95,7 @@ class my_list {
 
         //iterators (don't use. :) ) 
         iterator begin() { return iterator(sentinel->next); }
-//        const_iterator begin() const;
+        const_iterator begin() const { return const_iterator(sentinel->next); }
 //        const_iterator cbegin() const;
 
 //        reverce_iterator rbegin();
@@ -73,7 +103,7 @@ class my_list {
 //        const_reverce_iterator crbegin();
 
         iterator end() { return iterator(sentinel); }
-//        const_iterator end() const;
+        const_iterator end() const { return const_iterator(sentinel); }
 //        const_iterator cend() const
 
 //        reverce_iterator rend()
