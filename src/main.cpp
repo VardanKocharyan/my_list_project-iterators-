@@ -37,6 +37,13 @@ int main() {
     Vrdo_it->print();
     std::cout << Vrdo_it->x << std::endl;
 
+    my_list<int>::const_iterator const_it = b.begin();
+    std::cout << *const_it << std::endl;
+
+    //reverce it
+    my_list<int>::reverse_iterator r_it = b.rbegin();
+    ++r_it;
+    std::cout << *r_it << std::endl;
 
     return 0;
 }
