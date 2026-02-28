@@ -197,7 +197,7 @@ class my_list {
 //        const_reverce_iterator crend() const;
 
 
-        bool empty() const { return sentinel->next == sentinel; }
+        bool empty() const { return sentinel->next = sentinel; }
         size_type size() { return msize; }
 
         void clear();
@@ -404,42 +404,39 @@ void my_list<T>::clear() {
 template<typename T>
 void my_list<T>::push_back(const T& value) {
         ++msize;
-        NodeBase* node = new Node(value);
+        NodeBase* back = static_cast<NodeBase*>(new Node(value));
+        NodeBase* tmp = sentinel->prev;
 
-        NodeBase* last = sentinel->prev;
+        back->next = sentinel;
+        back->prev = tmp;
 
-        node->prev = last;
-        node->next = sentinel;
-
-        sentinel->prev = node;
-        last->next = node;
+        tmp->next = back;
+        sentinel->prev = back;
 }
 template<typename T>
 void my_list<T>::push_back(T&& value) {
         ++msize;
-        NodeBase* node = new Node(value);
+        NodeBase* back = new Node(value);
+        NodeBase* tmp = sentinel;
 
-        NodeBase* last = sentinel->prev;
+        if (!empty()) 
+            tmp = sentinel->prev;
 
-        node->prev = last;
-        node->next = sentinel;
+        back->next = sentinel;
+        back->prev = tmp;
 
-        sentinel->prev = node;
-        last->next = node;
+        tmp->next = back;
+        sentinel->prev = back;
 }
 
 template<typename T>
 void my_list<T>::pop_back() {
         if(empty()) return;
         
-        NodeBase* last = sentinel->prev;
-        NodeBase* befor = last->prev;
-
-        befor->next = sentinel;
-        sentinel->prev = befor;
-
-        delete static_cast<Node*>(last);
-
+        NodeBase* tmp = sentinel->prev;
+        sentinel->prev = tmp->prev;
+        tmp->prev->next = sentinel;
+        delete static_cast<Node*>(tmp);
         --msize;
 }
 

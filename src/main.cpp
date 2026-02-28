@@ -42,8 +42,19 @@ int main() {
 
     //reverce it
     my_list<int>::reverse_iterator r_it = b.rbegin();
-    ++r_it;
     std::cout << *r_it << std::endl;
+
+    std::cout << "front()/ back(): " << b.front() << " " << b.back() << std::endl;
+
+    int x = 3;
+    b.push_back(x);
+    b.push_back(4);
+    std::cout <<"b: " <<  b << std::endl;
+
+    b.pop_back();
+    std::cout << b << std::endl;
+
+
 
     return 0;
 }
