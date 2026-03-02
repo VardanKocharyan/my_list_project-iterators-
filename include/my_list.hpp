@@ -24,6 +24,8 @@ class my_list {
             value_type value;
 
             Node(const_reference v = value_type()) : value(v) {}
+            template<class... Args>
+            Node(Args&&... args) : value(std::forward<Args>(args)...) {}
         };
 
         NodeBase* sentinel;
@@ -135,6 +137,10 @@ class my_list {
         my_list& operator=(my_list&& r);
         my_list& operator=(std::initializer_list<value_type> ilist);
 
+        //assign
+        void assign(size_t count, const T& value);
+        void assign(std::initializer_list<T> list);
+
         //front
         reference front();
         const_reference front() const;
@@ -143,31 +149,22 @@ class my_list {
         reference back();
         const_reference back() const;
 
-/*
-        //iterators (don't use. :) ) 
-        iterator begin();
-        const_iterator begin() const;
-        const_iterator cbegin() const;
+        //insert
+        iterator insert(const_iterator pos, const T& value);
+        iterator insert(const_iterator pos, T&& value);
+        iterator insert(const_iterator pos, size_type count, const T& value);
+        iterator insert(const_iterator pos, std::initializer_list<T> ilist);
 
-        iterator end();
-        const_iterator end() const;
-        const_iterator cend() const
+        //erace
+        iterator erase(iterator pos);
+        const_iterator erase(const_iterator pos);
+        iterator erase(iterator first, iterator last);
+        const_iterator erase(const_iterator first, const_iterator last);
 
-        reverce_iterator rend()
-        const_reverce_iterator rend() const;
-        const_reverce_iterator crend() const;
-*/
+        //emplace
+       template <typename ... Args>
+       iterator emplace(const_iterator pos, Args&&... args);
 
-/*        //insert
-        void insert(const size_t pos, const T& value);
-        void insert(const size_t pos, T&& value);
-        void insert(const size_t pos, size_t count, const T& value);
-        void insert(const size_t pos, std::initializer_list<T> list); 
-*/
-
-/*        //erace
-        void erace(const size_t pos);
-*/
 
         // push/pop back
         void push_back(const T& value);
@@ -175,9 +172,9 @@ class my_list {
         void pop_back();
                 
         //push/pop front
-//        void push_front(const T& value);
-//        void push_front(T&& value);
-//        void pop_front();
+        void push_front(const T& value);
+        void push_front(T&& value);
+        void pop_front();
 
         //iterators (don't use. :) ) 
         iterator begin() { return iterator(sentinel->next); }
@@ -371,6 +368,23 @@ my_list<T>& my_list<T>::operator=(std::initializer_list<T> ilist) {
     return *this;
 }
 
+
+//assign
+template<typename T>
+void my_list<T>::assign(size_t count, const T& value) {
+        clear();
+        for(size_t i{}; i < count; ++i) {
+                push_back(value);
+        }
+}
+template<typename T>
+void my_list<T>::assign(std::initializer_list<T> list) {
+        clear();
+        for(const T& x : list) {
+                push_back(x);
+        }
+}
+
 //front
 template<typename T>
 my_list<T>::reference my_list<T>::front() { return static_cast<Node*>(sentinel->next)->value; }
@@ -385,6 +399,172 @@ template<typename T>
 my_list<T>::const_reference my_list<T>::back() const { return static_cast<const Node*>(sentinel->prev)->value; }
 
 
+//insert
+template <typename T>
+typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, const T& value ) {
+    NodeBase* curr = pos.curr;
+    NodeBase* prev = curr->prev;
+
+    NodeBase* node = new Node(value);
+
+    node->next = curr;
+    node->prev = prev;
+
+    prev->next = node;
+    curr->prev = node;
+
+    ++msize;
+
+    return iterator(node);
+}
+template <typename T>
+typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, T&& value) {
+    NodeBase* curr = pos.curr;
+    NodeBase* prev = curr->prev;
+
+    NodeBase* node = new Node(std::move(value));
+
+    node->next = curr;
+    node->prev = prev;
+
+    prev->next = node;
+    curr->prev = node;
+
+    ++msize;
+
+    return iterator(node);
+}
+template <typename T>
+typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, size_type count, const T& value) {
+    iterator it = iterator(pos.curr);
+
+    if (!count)
+        return it;
+
+    iterator first_inserted;
+    for (size_type i{}; i < count; ++i) {
+        it = insert(it, value);
+
+        if(!i) first_inserted = it;
+
+        ++it;
+    }
+
+    return first_inserted;
+}
+template <typename T>
+typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, std::initializer_list<T> ilist) {
+    iterator it = iterator(pos.curr);
+
+    iterator first_inserted;
+    bool is = true;
+
+    for (const T& value : ilist)
+    {
+        it = insert(it, value);
+
+        if (is)
+        {
+            first_inserted = it;
+            is = false;
+        }
+        ++it;
+    }
+    return first_inserted;
+}
+
+
+//erace
+template <typename T>
+typename my_list<T>::iterator my_list<T>::erase(iterator pos) {
+    NodeBase* node = pos.curr;
+    
+    NodeBase* next = node->next;
+
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
+
+    delete static_cast<Node*>(node);
+    --msize;
+    return iterator(next);
+}
+
+template <typename T>
+typename my_list<T>::const_iterator my_list<T>::erase(const_iterator pos) {
+    NodeBase* node = const_cast<NodeBase*>(pos.curr);
+    
+    NodeBase* next = node->next;
+
+    node->next->prev = node->prev;
+    node->prev->next = node->next;
+
+    delete static_cast<const Node*>(node);
+    
+    --msize;
+
+    return const_iterator(next);
+}
+
+template <typename T>
+typename my_list<T>::iterator my_list<T>::erase(iterator first, iterator last) {
+    NodeBase* f = first.curr;
+    NodeBase* l = last.curr;
+
+    f->prev->next = l;
+    l->prev = f->prev;
+
+    while(f != l) {
+        NodeBase* next = f->next;
+        delete static_cast<Node*>(f);
+        --msize;
+        f = next;
+    }
+
+    return iterator(l);
+}
+
+template <typename T>
+typename my_list<T>::const_iterator my_list<T>::erase(const_iterator first, const_iterator last) {
+   NodeBase* f = const_cast<NodeBase*>(first.curr);
+   NodeBase* l = const_cast<NodeBase*>(last.curr);
+
+    f->prev->next = l;
+    l->prev = f->prev;
+
+    while(f != l) {
+        NodeBase* next = f->next;
+        delete static_cast<Node*>(f);
+        --msize;
+        f = next;
+    }
+
+    return const_iterator(l);
+}
+
+
+//emplace
+template <typename T>
+template <typename ... Args>
+typename my_list<T>::iterator my_list<T>::emplace(const_iterator pos, Args&&... args) {
+NodeBase* p = const_cast<NodeBase*>(pos.curr);
+
+    NodeBase* prev = p->prev;
+
+    Node* node = new Node(std::forward<Args>(args)...);
+
+    node->next = p;
+    node->prev = prev;
+
+    prev->next = node;
+    p->prev = node;
+
+    ++msize;
+
+    return iterator(node);
+}
+
+
+//clear
 template<typename T>
 void my_list<T>::clear() {
     NodeBase* dummy = sentinel->next;
@@ -442,6 +622,50 @@ void my_list<T>::pop_back() {
 
         --msize;
 }
+
+
+//pop/push front 
+template <typename T>
+void my_list<T>::push_front(const T& value) {
+    ++msize;
+    NodeBase* node = new Node(value);
+    NodeBase* next = sentinel->next;
+
+    node->next = next;
+    node->prev = sentinel;
+
+    sentinel->next = node;
+    next->prev = node;
+}
+
+template <typename T>
+void my_list<T>::push_front(T&& value) {
+    ++msize;
+    NodeBase* node = new Node(value);
+    NodeBase* next = sentinel->next;
+
+    node->next = next;
+    node->prev = sentinel;
+
+    sentinel->next = node;
+    next->prev = node;
+}
+
+template <typename T>
+void my_list<T>::pop_front() {
+    if(empty()) return;
+
+    NodeBase* node = sentinel->next;
+    NodeBase* next = node->next;
+
+    sentinel->next = next;
+    next->prev = sentinel;
+
+    --msize;
+    delete static_cast<Node*>(node);
+}
+
+
 
 //operator<<
 template<typename T>

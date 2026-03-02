@@ -54,6 +54,21 @@ int main() {
     b.pop_back();
     std::cout << b << std::endl;
 
+    b.push_front(x);
+    b.push_front(1);
+    std::cout <<"b: " <<  b << std::endl;
+
+    b.pop_front();
+    std::cout << b << std::endl;
+
+    b.assign(6, 7);
+    std::cout << b << std::endl;
+
+    b.assign({1, 2, 3, 4, 5, 6});
+    std::cout << b << std::endl;
+
+
+
 
 
     return 0;
