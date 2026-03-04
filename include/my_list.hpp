@@ -36,6 +36,7 @@ class my_list {
         class list_iterator {
             template<bool, bool>
             friend class list_iterator;
+            friend class my_list<T>;
 
             public:
                 using differance_type = std::ptrdiff_t;
@@ -63,7 +64,8 @@ class my_list {
 
                 template <bool B = isConst, typename = enable_if_t<B>>
                 list_iterator(const list_iterator<false, isReverce>& r) : curr(r.curr) {}
-
+                
+                template<bool B = isConst, typename = std::enable_if_t<B>>
                 list_iterator& operator=(const list_iterator& r) {
                     if (this != &r)
                         curr = r.curr;
@@ -402,7 +404,7 @@ my_list<T>::const_reference my_list<T>::back() const { return static_cast<const 
 //insert
 template <typename T>
 typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, const T& value ) {
-    NodeBase* curr = pos.curr;
+    NodeBase* curr = const_cast<NodeBase*>(pos.curr);
     NodeBase* prev = curr->prev;
 
     NodeBase* node = new Node(value);
@@ -419,7 +421,7 @@ typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, const T& va
 }
 template <typename T>
 typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, T&& value) {
-    NodeBase* curr = pos.curr;
+    NodeBase* curr = const_cast<NodeBase*>(pos.curr);
     NodeBase* prev = curr->prev;
 
     NodeBase* node = new Node(std::move(value));
@@ -436,7 +438,7 @@ typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, T&& value) 
 }
 template <typename T>
 typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, size_type count, const T& value) {
-    iterator it = iterator(pos.curr);
+    iterator it = iterator(const_cast<NodeBase*>(pos.curr));
 
     if (!count)
         return it;
@@ -454,7 +456,7 @@ typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, size_type c
 }
 template <typename T>
 typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, std::initializer_list<T> ilist) {
-    iterator it = iterator(pos.curr);
+    iterator it = iterator(const_cast<NodeBase*>(pos.curr));
 
     iterator first_inserted;
     bool is = true;
@@ -477,7 +479,7 @@ typename my_list<T>::iterator my_list<T>::insert(const_iterator pos, std::initia
 //erace
 template <typename T>
 typename my_list<T>::iterator my_list<T>::erase(iterator pos) {
-    NodeBase* node = pos.curr;
+    NodeBase* node = const_cast<NodeBase*>(pos.curr);
     
     NodeBase* next = node->next;
 
