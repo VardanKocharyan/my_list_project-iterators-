@@ -62,10 +62,11 @@ class my_list {
             public:
                 list_iterator(NodePtr r = nullptr) : curr(r) {}
 
-                template <bool B = isConst, typename = enable_if_t<B>>
+                template <bool B = isConst, typename = enable_if_t<B>> //Nars es enable if-i vra issue baci vor harc tam 
+
                 list_iterator(const list_iterator<false, isReverce>& r) : curr(r.curr) {}
                 
-                template<bool B = isConst, typename = std::enable_if_t<B>>
+                template<bool B = isConst, typename = std::enable_if_t<B>> //Nars es enable if-i vra issue baci vor harc tam 
                 list_iterator& operator=(const list_iterator& r) {
                     if (this != &r)
                         curr = r.curr;
